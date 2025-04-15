@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ChatMessage, type ChatModel } from '@shared/schema';
+import { type ChatMessage, type ChatModel, type Message } from '@shared/schema';
 import { formatTime } from '@/lib/utils';
 
 interface UseChatProps {
@@ -36,13 +36,19 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
   }, [username]);
   
   // Load messages when userId changes
-  useQuery({ 
+  const messagesQuery = useQuery<Message[]>({ 
     queryKey: ['/api/messages', userId],
-    enabled: !!userId,
-    onSuccess: (data) => {
+    enabled: !!userId
+  });
+
+  // Handle messages data when it loads successfully
+  useEffect(() => {
+    if (messagesQuery.isSuccess && messagesQuery.data) {
+      const data = messagesQuery.data;
+      
       if (data && data.length > 0) {
         // Transform DB messages to chat messages
-        const chatMessages: ChatMessage[] = data.flatMap(msg => [
+        const chatMessages: ChatMessage[] = data.flatMap((msg) => [
           {
             id: msg.id,
             sender: 'user',
@@ -63,8 +69,8 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
         // If no messages, add welcome message
         addWelcomeMessage();
       }
-    },
-    onError: (error) => {
+    } else if (messagesQuery.isError) {
+      const error = messagesQuery.error;
       console.error('Failed to load messages:', error);
       toast({
         title: 'Error',
@@ -74,7 +80,7 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
       // Add welcome message on error too
       addWelcomeMessage();
     }
-  });
+  }, [messagesQuery.status, messagesQuery.data, messagesQuery.error, addWelcomeMessage, toast]);
   
   // Send message mutation
   const sendMessageMutation = useMutation({
