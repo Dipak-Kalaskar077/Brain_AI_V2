@@ -39,15 +39,27 @@ When asked follow-up questions, connect them to previous conversation context.`;
       
       // Build conversation history from previous messages (most recent 8 for better context)
       let conversationHistory = '';
+      
+      // Get the 8 most recent messages, but we need to reverse them to get chronological order
+      // Note: they are already sorted newest-first from storage
       const recentMessages = previousMessages.slice(0, 8).reverse();
       
       if (recentMessages.length > 0) {
         conversationHistory = "\n\nPrevious conversation:\n";
-        recentMessages.forEach(msg => {
+        
+        // Add each message pair in chronological order (oldest to newest)
+        recentMessages.forEach((msg, index) => {
+          // Add the user's message followed by Brain's response
           conversationHistory += `${username}: ${msg.content}\n`;
           conversationHistory += `Brain: ${msg.aiResponse}\n`;
+          
+          // Add a separator between conversation turns for clarity
+          if (index < recentMessages.length - 1) {
+            conversationHistory += `---\n`;
+          }
         });
-        console.log(`Added ${recentMessages.length} previous messages for context`);
+        
+        console.log(`Added ${recentMessages.length} previous messages for context in chronological order`);
       }
       
       // Create the full prompt with instructions and conversation history

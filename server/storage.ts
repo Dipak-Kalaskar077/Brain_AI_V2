@@ -62,12 +62,18 @@ export class MemStorage implements IStorage {
   }
 
   async getMessagesByUserId(userId: number, limit: number = 100): Promise<Message[]> {
+    // Filter messages by user ID
     const userMessages = Array.from(this.messages.values())
-      .filter(message => message.userId === userId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
+      .filter(message => message.userId === userId);
     
-    return userMessages;
+    // Sort by timestamp (newest first for queries, oldest first for display)
+    const sortedMessages = userMessages.sort((a, b) => 
+      // For API/UI: sort by descending to get most recent first (newest on top)
+      b.timestamp.getTime() - a.timestamp.getTime()
+    );
+    
+    // Return limited number of messages 
+    return sortedMessages.slice(0, limit);
   }
 }
 

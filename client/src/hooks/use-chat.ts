@@ -47,23 +47,38 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
       const data = messagesQuery.data;
       
       if (data && data.length > 0) {
-        // Transform DB messages to chat messages
-        const chatMessages: ChatMessage[] = data.flatMap((msg) => [
-          {
+        // First sort messages by timestamp to ensure proper order (oldest first)
+        const sortedData = [...data].sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+        
+        // Transform DB messages to chat messages, keeping user and AI messages paired
+        const chatMessages: ChatMessage[] = [];
+        
+        sortedData.forEach((msg, index) => {
+          // Add user message
+          chatMessages.push({
             id: msg.id,
             sender: 'user',
             content: msg.content,
             timestamp: formatTime(new Date(msg.timestamp)),
             model: msg.model as ChatModel
-          },
-          {
+          });
+          
+          // Add AI response message with a slight timestamp offset to keep ordering correct
+          const aiTimestamp = new Date(msg.timestamp);
+          aiTimestamp.setSeconds(aiTimestamp.getSeconds() + 1); // 1 second later
+          
+          chatMessages.push({
             id: msg.id,
             sender: 'ai',
             content: msg.aiResponse,
-            timestamp: formatTime(new Date(msg.timestamp)),
+            timestamp: formatTime(aiTimestamp),
             model: msg.model as ChatModel
-          }
-        ]);
+          });
+        });
+        
+        console.log("Processed messages:", chatMessages.length);
         setMessages(chatMessages);
       } else {
         // If no messages, add welcome message
