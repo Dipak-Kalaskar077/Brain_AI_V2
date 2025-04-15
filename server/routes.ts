@@ -93,12 +93,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       
       if (!user) {
-        console.log(`User ID ${userId} not found in storage, creating generic user`);
-        // If user not found in storage, create a temporary user object to prevent errors
-        const tempUser = { id: userId, username: "Guest" };
+        console.log(`User ID ${userId} not found in storage, creating new user`);
+        // Create a proper user in storage to fix the issue permanently
+        const username = `User_${userId}`;
+        const newUser = await storage.createUser({
+          username,
+          password: 'guest'
+        });
         
-        // Generate AI response using Gemini with a generic username
-        const aiResponse = await aiService.generateResponse(content, "Guest");
+        // Get previous messages for this user ID if any
+        const previousMessages = await storage.getMessagesByUserId(userId, 10);
+        
+        // Generate AI response using Gemini with the new username
+        const aiResponse = await aiService.generateResponse(
+          content, 
+          username,
+          previousMessages
+        );
         
         // Save message to storage
         const savedMessage = await storage.saveMessage({
@@ -118,8 +129,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Generate AI response using only Gemini
-      const aiResponse = await aiService.generateResponse(content, user.username);
+      // Get previous messages for context
+      const previousMessages = await storage.getMessagesByUserId(userId, 10);
+      
+      // Generate AI response using only Gemini (with conversation history for context)
+      const aiResponse = await aiService.generateResponse(
+        content, 
+        user.username,
+        previousMessages
+      );
       
       // Save message to storage
       const savedMessage = await storage.saveMessage({

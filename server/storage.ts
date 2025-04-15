@@ -28,21 +28,11 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
+    // Just return the user without auto-creation - we'll handle creation in the routes
     const user = this.users.get(id);
     if (!user) {
       console.log(`User with ID ${id} not found in storage`);
-      
-      // Create a new user for this ID if not found
-      const newUser: User = {
-        id,
-        username: `Guest_${id}`,
-        password: 'guest' // Simple password
-      };
-      
-      this.users.set(id, newUser);
-      console.log(`Created new user: Guest_${id} with ID: ${id}`);
-      
-      return newUser;
+      return undefined;
     }
     return user;
   }

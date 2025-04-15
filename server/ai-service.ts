@@ -14,7 +14,11 @@ export class AIService {
     }
   }
 
-  async generateResponse(prompt: string, username: string): Promise<string> {
+  async generateResponse(
+    prompt: string, 
+    username: string,
+    previousMessages: Array<any> = []
+  ): Promise<string> {
     if (!this.gemini) {
       throw new Error("Gemini API key not configured");
     }
@@ -26,10 +30,26 @@ export class AIService {
       const model = this.gemini.getGenerativeModel({ model: GEMINI_MODEL });
       
       // Create a system prompt to set context
-      const systemPrompt = `You are Brain, an AI assistant for ${username}. Be helpful, friendly, and conversational. Keep responses informative but concise.`;
+      const systemPrompt = `You are Brain, an AI assistant for ${username}. 
+Your name is Brain. Always address the user by their name: ${username}.
+Be helpful, friendly, and conversational. Keep responses informative but concise.
+Never refer to the user as "Guest" or "Guest_1" - their name is ${username}.`;
       
-      // Create the full prompt with instructions
-      const fullPrompt = `${systemPrompt}\n\nUser's question: ${prompt}`;
+      // Build conversation history from previous messages (most recent 5)
+      let conversationHistory = '';
+      const recentMessages = previousMessages.slice(0, 5).reverse();
+      
+      if (recentMessages.length > 0) {
+        conversationHistory = "\n\nPrevious conversation:\n";
+        recentMessages.forEach(msg => {
+          conversationHistory += `${username}: ${msg.content}\n`;
+          conversationHistory += `Brain: ${msg.aiResponse}\n`;
+        });
+        console.log(`Added ${recentMessages.length} previous messages for context`);
+      }
+      
+      // Create the full prompt with instructions and conversation history
+      const fullPrompt = `${systemPrompt}${conversationHistory}\n\n${username}: ${prompt}\nBrain:`;
       
       console.log("Sending request to Gemini API...");
       
@@ -49,9 +69,15 @@ export class AIService {
       const response = result.response;
       const responseText = response.text() || "I'm sorry, I couldn't generate a response.";
       
-      console.log(`Generated response (first 50 chars): "${responseText.substring(0, 50)}..."`);
+      // Clean up potential AI misunderstandings
+      let cleanedResponse = responseText
+        .replace(/^Brain:/i, '') // Remove any "Brain:" prefix
+        .replace(/^Assistant:/i, '') // Remove any "Assistant:" prefix
+        .trim();
       
-      return responseText;
+      console.log(`Generated response (first 50 chars): "${cleanedResponse.substring(0, 50)}..."`);
+      
+      return cleanedResponse;
     } catch (error: any) {
       console.error("Gemini API error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
