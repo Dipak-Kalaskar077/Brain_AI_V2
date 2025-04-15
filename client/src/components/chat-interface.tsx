@@ -4,6 +4,8 @@ import { ChatInput } from "./chat-input";
 import { useChat } from "@/hooks/use-chat";
 import { useTextToSpeech } from "@/hooks/use-text-to-speech";
 import { type ChatModel } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ChatInterfaceProps {
   userId: number | null;
@@ -40,6 +42,17 @@ export function ChatInterface({ userId, username }: ChatInterfaceProps) {
     setCurrentModel(model);
   };
 
+  // Add sign-out handling
+  const handleSignOut = async () => {
+    try {
+      await apiRequest('POST', '/api/logout');
+      // Redirect to home page or trigger a state change that shows the login screen
+      window.location.reload(); // Simple approach to reset the app
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <div className="chat-container flex flex-col h-screen">
       {/* Header */}
@@ -61,6 +74,14 @@ export function ChatInterface({ userId, username }: ChatInterfaceProps) {
           <div className="text-sm px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
             <span>{username}</span>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            Sign Out
+          </Button>
         </div>
       </header>
 

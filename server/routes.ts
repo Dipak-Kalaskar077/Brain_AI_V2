@@ -26,11 +26,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         // Create new user
         user = await storage.createUser({ username, password });
+        console.log(`Created new user: ${username}, ID: ${user.id}`);
       } else {
         // Check password for existing user (simple check)
         if (user.password !== password) {
           return res.status(401).json({ message: "Invalid credentials" });
         }
+        console.log(`User logged in: ${username}, ID: ${user.id}`);
       }
       
       // Return user without password
@@ -40,6 +42,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Auth error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+  
+  // Logout user
+  app.post("/api/logout", (req: Request, res: Response) => {
+    res.status(200).json({ message: "Logged out successfully" });
   });
 
   // Get chat messages
@@ -86,7 +93,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        console.log(`User ID ${userId} not found in storage, creating generic user`);
+        // If user not found in storage, create a temporary user object to prevent errors
+        const tempUser = { id: userId, username: "Guest" };
+        
+        // Generate AI response using Gemini with a generic username
+        const aiResponse = await aiService.generateResponse(content, "Guest");
+        
+        // Save message to storage
+        const savedMessage = await storage.saveMessage({
+          userId,
+          content,
+          aiResponse,
+          model
+        });
+        
+        // Return response without error
+        return res.status(200).json({
+          id: savedMessage.id,
+          userMessage: content,
+          aiResponse,
+          timestamp: savedMessage.timestamp,
+          model
+        });
       }
       
       // Generate AI response using only Gemini

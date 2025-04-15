@@ -123,19 +123,36 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
       // Invalidate queries to get fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/messages', userId ? userId.toString() : ''] });
     },
-    onError: (error, _, context) => {
+    onError: (error, variables, context) => {
       console.error('Send message error:', error);
       
-      // Remove the optimistically added message
+      // Keep the user message but add a system message about the error
       if (context?.userMessage) {
-        setMessages(prev => prev.filter(msg => msg !== context.userMessage));
+        // Add a system message to show the error
+        const errorMessage: ChatMessage = {
+          sender: 'ai',
+          content: "Sorry, I'm having trouble responding right now. Please try again in a moment.",
+          timestamp: formatTime(new Date()),
+          model: currentModel
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
       }
       
       toast({
         title: 'Message Failed',
-        description: error.message || 'Failed to send your message',
+        description: 'The assistant is having trouble processing your request. Please try again.',
         variant: 'destructive'
       });
+      
+      // Try to re-authenticate if needed
+      if (error.message?.includes('User not found')) {
+        toast({
+          title: 'Authentication Issue',
+          description: 'Please sign out and sign back in to fix this issue.',
+          variant: 'destructive'
+        });
+      }
     }
   });
   
