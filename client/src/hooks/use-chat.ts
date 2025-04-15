@@ -37,8 +37,8 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
   
   // Load messages when userId changes
   const messagesQuery = useQuery<Message[]>({ 
-    queryKey: ['/api/messages', userId],
-    enabled: !!userId
+    queryKey: ['/api/messages', userId ? userId.toString() : ''],
+    enabled: true
   });
 
   // Handle messages data when it loads successfully
@@ -121,7 +121,7 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
       setMessages(prev => [...prev, aiMessage]);
       
       // Invalidate queries to get fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/messages', userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages', userId ? userId.toString() : ''] });
     },
     onError: (error, _, context) => {
       console.error('Send message error:', error);

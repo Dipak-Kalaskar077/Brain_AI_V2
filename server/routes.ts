@@ -43,8 +43,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get chat messages
-  app.get("/api/messages/:userId", async (req: Request, res: Response) => {
+  app.get("/api/messages/:userId?", async (req: Request, res: Response) => {
     try {
+      // If userId is not provided, return empty array
+      if (!req.params.userId) {
+        return res.status(200).json([]);
+      }
+      
       const userId = parseInt(req.params.userId);
       
       if (isNaN(userId)) {
