@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Gemini model - use the correct format for the model name
-const GEMINI_MODEL = "gemini-1.0-pro";
+// Gemini model - use an available model from the API
+const GEMINI_MODEL = "gemini-1.5-pro-latest";
 
 export class AIService {
   private gemini: GoogleGenerativeAI | null = null;
