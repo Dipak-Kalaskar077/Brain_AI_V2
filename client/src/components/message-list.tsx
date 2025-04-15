@@ -21,7 +21,7 @@ export function MessageList({ messages, username, isLoading, isSpeechEnabled }: 
     <div className="messages-container p-4 bg-gray-50 dark:bg-gray-900 space-y-4 flex-1 overflow-y-auto">
       {messages.map((message, index) => (
         <MessageItem
-          key={`${message.id || index}-${message.timestamp}`}
+          key={`${message.sender}-${index}-${message.timestamp || ''}`}
           message={message}
           username={username}
           isSpeechEnabled={isSpeechEnabled}
