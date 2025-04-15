@@ -76,6 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const messageSchema = z.object({
         userId: z.number(),
+        username: z.string().optional(),
         content: z.string().min(1),
         model: z.enum(["gemini"]) // Only allow gemini model
       });
@@ -86,7 +87,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid message data" });
       }
       
-      const { userId, content } = validation.data;
+      // Extract data including the username
+      const { userId, username: clientUsername, content } = validation.data;
       const model = "gemini"; // Always use gemini
       
       // Get user
@@ -94,8 +96,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!user) {
         console.log(`User ID ${userId} not found in storage, creating new user`);
-        // Create a proper user in storage to fix the issue permanently
-        const username = `User_${userId}`;
+        
+        // Use client-provided username if available, otherwise generate one
+        const username = clientUsername || `User_${userId}`;
+        console.log(`Creating new user with username: ${username}`);
+        
         const newUser = await storage.createUser({
           username,
           password: 'guest'
@@ -104,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get previous messages for this user ID if any
         const previousMessages = await storage.getMessagesByUserId(userId, 10);
         
-        // Generate AI response using Gemini with the new username
+        // Generate AI response using Gemini with the actual username
         const aiResponse = await aiService.generateResponse(
           content, 
           username,
@@ -132,10 +137,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get previous messages for context
       const previousMessages = await storage.getMessagesByUserId(userId, 10);
       
+      // Prefer the username passed from client, fallback to database username if not provided
+      const displayUsername = clientUsername || user.username;
+      console.log(`Using username for AI response: ${displayUsername}`);
+      
       // Generate AI response using only Gemini (with conversation history for context)
       const aiResponse = await aiService.generateResponse(
         content, 
-        user.username,
+        displayUsername,
         previousMessages
       );
       

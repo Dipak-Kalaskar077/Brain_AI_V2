@@ -30,14 +30,16 @@ export class AIService {
       const model = this.gemini.getGenerativeModel({ model: GEMINI_MODEL });
       
       // Create a system prompt to set context
-      const systemPrompt = `You are Brain, an AI assistant for ${username}. 
-Your name is Brain. Always address the user by their name: ${username}.
+      const systemPrompt = `You are Brain, a personal AI assistant for ${username}.
+Your name is Brain. Always address the user by their exact name: ${username} (not User_1 or Guest).
 Be helpful, friendly, and conversational. Keep responses informative but concise.
-Never refer to the user as "Guest" or "Guest_1" - their name is ${username}.`;
+Your responses should be personalized to ${username}. Avoid generic responses.
+Carefully remember details ${username} shares with you during conversation and refer back to them in later responses.
+When asked follow-up questions, connect them to previous conversation context.`;
       
-      // Build conversation history from previous messages (most recent 5)
+      // Build conversation history from previous messages (most recent 8 for better context)
       let conversationHistory = '';
-      const recentMessages = previousMessages.slice(0, 5).reverse();
+      const recentMessages = previousMessages.slice(0, 8).reverse();
       
       if (recentMessages.length > 0) {
         conversationHistory = "\n\nPrevious conversation:\n";
@@ -50,6 +52,14 @@ Never refer to the user as "Guest" or "Guest_1" - their name is ${username}.`;
       
       // Create the full prompt with instructions and conversation history
       const fullPrompt = `${systemPrompt}${conversationHistory}\n\n${username}: ${prompt}\nBrain:`;
+      
+      // Debug the conversation context
+      if (recentMessages.length > 0) {
+        console.log("Using conversation history for context with messages:");
+        recentMessages.forEach((msg, i) => {
+          console.log(`  ${i+1}. User: ${msg.content.substring(0, 30)}...`);
+        });
+      }
       
       console.log("Sending request to Gemini API...");
       

@@ -89,6 +89,7 @@ export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
       
       const response = await apiRequest('POST', '/api/chat', { 
         userId, 
+        username, // Send username with every request
         content, 
         model 
       });
