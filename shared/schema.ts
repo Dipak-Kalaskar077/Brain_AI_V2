@@ -35,7 +35,7 @@ export type User = typeof users.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
-export type ChatModel = "openai" | "gemini";
+export type ChatModel = "gemini";
 
 export type ChatMessage = {
   id?: number;

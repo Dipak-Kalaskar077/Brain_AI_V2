@@ -18,7 +18,7 @@ interface SendMessageParams {
 
 export function useChat({ userId, username, isSpeechEnabled }: UseChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentModel, setCurrentModel] = useState<ChatModel>('openai');
+  const [currentModel, setCurrentModel] = useState<ChatModel>('gemini');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   

@@ -2,7 +2,6 @@ import { useRef, useState, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { type ChatModel } from "@shared/schema";
 
@@ -63,16 +62,10 @@ export function ChatInput({
     <div className="input-area bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3">
       <div className="flex items-center gap-2 mb-2 text-sm text-gray-600 dark:text-gray-400 px-1">
         <div className="flex items-center gap-1 mr-4">
-          <span>Model:</span>
-          <Select value={currentModel} onValueChange={(value) => onChangeModel(value as ChatModel)}>
-            <SelectTrigger className="bg-gray-100 dark:bg-gray-700 border-none rounded-md py-1 h-8 w-28">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="gemini">Gemini</SelectItem>
-            </SelectContent>
-          </Select>
+          <span>AI Model:</span>
+          <span className="bg-gray-100 dark:bg-gray-700 py-1 px-3 rounded-md text-xs">
+            <i className="fas fa-robot mr-1"></i> Gemini
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
