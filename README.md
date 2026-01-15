@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dipak Personal AI Assistant
 
 A personal AI assistant web application built with Express, TypeScript, and MySQL, powered by Google's Gemini AI model.
@@ -118,3 +119,4 @@ If you encounter any issues:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
