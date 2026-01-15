@@ -1,6 +1,47 @@
+# Dependencies
 node_modules
+npm
+package-lock.json
+
+# Build outputs
 dist
-.DS_Store
-server/public
-vite.config.ts.*
+build
 *.tar.gz
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+.env.production
+# Note: ENV_EXAMPLE.txt is safe to commit (contains only placeholders)
+
+# IDE and OS files
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Server files
+server/public
+
+# Vite
+vite.config.ts.*
+
+# Test files (if you want to keep them local)
+# Uncomment if you want to exclude test files
+# test-*.ts
+# test-*.js
+# *_test.py
+# test_*.py

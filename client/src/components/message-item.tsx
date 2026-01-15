@@ -48,15 +48,15 @@ export function MessageItem({ message, username, isSpeechEnabled = true }: Messa
     <div
       className={`${
         isUserMessage
-          ? "user-message bg-primary-600 text-white ml-auto"
-          : "ai-message bg-gray-100 dark:bg-gray-800"
-      } max-w-[75%] md:max-w-[67%] lg:max-w-[50%] p-3 px-4 shadow-sm rounded-2xl ${
+          ? "user-message bg-gray-800 text-white ml-auto"
+          : "ai-message bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+      } max-w-[75%] md:max-w-[67%] lg:max-w-[50%] p-3 px-4 shadow-sm rounded-lg ${
         isUserMessage ? "rounded-br-none" : "rounded-bl-none"
       }`}
     >
       <div className={`flex items-start gap-2 ${isUserMessage ? "flex-row-reverse" : ""}`}>
-        <Avatar className={`w-8 h-8 ${isUserMessage ? "bg-gray-300 dark:bg-gray-700" : "bg-primary-600"}`}>
-          <AvatarFallback className={`${isUserMessage ? "text-gray-700 dark:text-gray-300" : "text-white"}`}>
+        <Avatar className={`w-8 h-8 ${isUserMessage ? "bg-gray-600" : "bg-teal-600"}`}>
+          <AvatarFallback className="text-white">
             {isUserMessage ? getSingleInitial(username) : <i className="fas fa-brain text-xs"></i>}
           </AvatarFallback>
         </Avatar>
@@ -65,27 +65,27 @@ export function MessageItem({ message, username, isSpeechEnabled = true }: Messa
           <div className={`flex items-center gap-2 ${isUserMessage ? "justify-end" : ""}`}>
             {isUserMessage ? (
               <>
-                <span className="text-xs text-gray-100">{message.timestamp}</span>
-                <span className="font-medium text-sm">You</span>
+                <span className="text-xs text-gray-300">{message.timestamp}</span>
+                <span className="font-medium text-sm text-white">You</span>
               </>
             ) : (
               <>
-                <span className="font-medium text-sm">Brain</span>
+                <span className="font-medium text-sm text-gray-800 dark:text-white">Brain</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">{message.timestamp}</span>
               </>
             )}
           </div>
 
-          <div className={`message-content mt-1 ${isUserMessage ? "text-right" : ""}`}>
+          <div className={`message-content mt-1 ${isUserMessage ? "text-right text-white" : "text-gray-800 dark:text-white"}`}>
             {message.content}
           </div>
 
           {!isUserMessage && (
-            <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400 gap-3">
+            <div className="mt-2 flex items-center text-xs text-gray-500 dark:text-gray-400 gap-3">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 hover:text-primary-600 transition"
+                className="h-auto p-0 hover:text-gray-700 dark:hover:text-white transition"
                 onClick={handleSpeakMessage}
               >
                 <i className={`fas ${isCurrentlySpeaking ? "fa-pause" : "fa-volume-up"} mr-1`}></i>
@@ -95,7 +95,7 @@ export function MessageItem({ message, username, isSpeechEnabled = true }: Messa
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 hover:text-primary-600 transition"
+                className="h-auto p-0 hover:text-gray-700 dark:hover:text-white transition"
                 onClick={handleCopyContent}
               >
                 <i className="fas fa-copy mr-1"></i>

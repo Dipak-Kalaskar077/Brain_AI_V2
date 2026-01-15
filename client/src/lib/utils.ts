@@ -48,15 +48,22 @@ export function getSingleInitial(name: string): string {
 /**
  * Get a stored value from localStorage with fallback
  */
-export function getStoredValue<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
+export function getStoredValue(key: string): string | null {
+  if (typeof window === 'undefined') return null;
   
   try {
-    const item = window.localStorage.getItem(key);
-    return item ? (JSON.parse(item) as T) : fallback;
+    const item = localStorage.getItem(key);
+    if (!item) return null;
+    
+    // Try to parse as JSON, fallback to raw string
+    try {
+      return JSON.parse(item);
+    } catch {
+      return item;
+    }
   } catch (error) {
-    console.warn(`Error reading localStorage key "${key}":`, error);
-    return fallback;
+    console.error(`Error reading localStorage key "${key}":`, error);
+    return null;
   }
 }
 
@@ -70,5 +77,13 @@ export function setStoredValue<T>(key: string, value: T): void {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
     console.warn(`Error setting localStorage key "${key}":`, error);
+  }
+}
+
+export function removeStoredValue(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error(`Error removing ${key} from localStorage:`, error);
   }
 }

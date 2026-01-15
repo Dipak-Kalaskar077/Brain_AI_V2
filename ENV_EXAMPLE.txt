@@ -1,0 +1,34 @@
+# Copy this file to .env and fill in your values
+
+# Database Configuration
+# Required: MySQL database connection details
+DB_HOST=localhost
+DB_USER=your_mysql_username
+DB_PASSWORD=your_mysql_password
+DB_NAME=dipak_ai
+
+# API Keys
+# Required: Google Gemini API key
+# Get your API key from: https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Server Configuration
+# Optional: Port number (defaults to 5000, Render uses PORT env var automatically)
+PORT=5000
+
+# Environment
+# Optional: Node environment (development, production, test)
+NODE_ENV=development
+
+# Security
+# Required in production: Session secret for encrypting session cookies
+# Generate a strong random string (at least 32 characters)
+# Example: openssl rand -base64 32
+SESSION_SECRET=your_strong_random_session_secret_here
+
+# Frontend URL
+# Optional: Frontend URL for CORS configuration
+# For Render deployment, set this to your Render frontend URL
+# Example: https://your-app.onrender.com
+FRONTEND_URL=
+

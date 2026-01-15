@@ -1,17 +1,63 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Gemini model - use an available model from the API
-const GEMINI_MODEL = "gemini-1.5-pro-latest";
+// Updated to use gemini-2.5-flash (fast and efficient)
+const GEMINI_MODEL = "gemini-2.5-flash";
 
-export class AIService {
+interface RateLimitInfo {
+  lastRequestTime: number;
+  requestsInLastMinute: number;
+  requestsInLastDay: number;
+}
+
+class AIService {
   private gemini: GoogleGenerativeAI | null = null;
+  private rateLimitInfo: RateLimitInfo = {
+    lastRequestTime: 0,
+    requestsInLastMinute: 0,
+    requestsInLastDay: 0
+  };
 
   constructor() {
-    // Initialize Gemini if API key is available
-    const geminiApiKey = process.env.GEMINI_API_KEY || "";
-    if (geminiApiKey) {
-      this.gemini = new GoogleGenerativeAI(geminiApiKey);
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY not found in environment variables');
+      return;
     }
+    this.gemini = new GoogleGenerativeAI(apiKey);
+  }
+
+  private checkRateLimit(): { canProceed: boolean; waitTime?: number } {
+    const now = Date.now();
+    const oneMinute = 60 * 1000;
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    // Reset counters if enough time has passed
+    if (now - this.rateLimitInfo.lastRequestTime > oneMinute) {
+      this.rateLimitInfo.requestsInLastMinute = 0;
+    }
+    if (now - this.rateLimitInfo.lastRequestTime > oneDay) {
+      this.rateLimitInfo.requestsInLastDay = 0;
+    }
+
+    // Check rate limits
+    if (this.rateLimitInfo.requestsInLastMinute >= 60) {
+      const waitTime = oneMinute - (now - this.rateLimitInfo.lastRequestTime);
+      return { canProceed: false, waitTime };
+    }
+    if (this.rateLimitInfo.requestsInLastDay >= 60) {
+      const waitTime = oneDay - (now - this.rateLimitInfo.lastRequestTime);
+      return { canProceed: false, waitTime };
+    }
+
+    return { canProceed: true };
+  }
+
+  private updateRateLimit() {
+    const now = Date.now();
+    this.rateLimitInfo.lastRequestTime = now;
+    this.rateLimitInfo.requestsInLastMinute++;
+    this.rateLimitInfo.requestsInLastDay++;
   }
 
   async generateResponse(
@@ -19,75 +65,63 @@ export class AIService {
     username: string,
     previousMessages: Array<any> = []
   ): Promise<string> {
+    // Check rate limits
+    const rateLimitCheck = this.checkRateLimit();
+    if (!rateLimitCheck.canProceed) {
+      const waitTimeSeconds = Math.ceil((rateLimitCheck.waitTime || 0) / 1000);
+      throw new Error(`Rate limit exceeded. Please wait ${waitTimeSeconds} seconds before trying again.`);
+    }
     if (!this.gemini) {
       throw new Error("Gemini API key not configured");
     }
 
     try {
+      console.log('Starting AI response generation...');
+      
+      if (!prompt || typeof prompt !== 'string') {
+        throw new Error('Invalid prompt: must be a non-empty string');
+      }
+      
+      if (!this.gemini) {
+        console.error('Gemini client not initialized. API Key:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
+        throw new Error('Gemini API client not initialized');      
+      }
+
       console.log(`Generating response with Gemini model: ${GEMINI_MODEL}`);
       console.log(`Prompt: "${prompt.substring(0, 50)}..." for user: ${username}`);
       
+      // Initialize the model with basic configuration
       const model = this.gemini.getGenerativeModel({ model: GEMINI_MODEL });
       
-      // Create a system prompt to set context
-      const systemPrompt = `You are Brain, a personal AI assistant for ${username}.
-Your name is Brain. Always address the user by their exact name: ${username} (not User_1 or Guest).
-Be helpful, friendly, and conversational. Keep responses informative but concise.
-Your responses should be personalized to ${username}. Avoid generic responses.
-Carefully remember details ${username} shares with you during conversation and refer back to them in later responses.
-When asked follow-up questions, connect them to previous conversation context.`;
-      
-      // Build conversation history from previous messages (most recent 8 for better context)
-      let conversationHistory = '';
-      
-      // Get the 8 most recent messages, but we need to reverse them to get chronological order
-      // Note: they are already sorted newest-first from storage
-      const recentMessages = previousMessages.slice(0, 8).reverse();
-      
-      if (recentMessages.length > 0) {
-        conversationHistory = "\n\nPrevious conversation:\n";
-        
-        // Add each message pair in chronological order (oldest to newest)
-        recentMessages.forEach((msg, index) => {
-          // Add the user's message followed by Brain's response
-          conversationHistory += `${username}: ${msg.content}\n`;
-          conversationHistory += `Brain: ${msg.aiResponse}\n`;
-          
-          // Add a separator between conversation turns for clarity
-          if (index < recentMessages.length - 1) {
-            conversationHistory += `---\n`;
-          }
-        });
-        
-        console.log(`Added ${recentMessages.length} previous messages for context in chronological order`);
+      if (!model) {
+        throw new Error('Failed to initialize Gemini model');
       }
       
-      // Create the full prompt with instructions and conversation history
-      const fullPrompt = `${systemPrompt}${conversationHistory}\n\n${username}: ${prompt}\nBrain:`;
-      
-      // Debug the conversation context
-      if (recentMessages.length > 0) {
-        console.log("Using conversation history for context with messages:");
-        recentMessages.forEach((msg, i) => {
-          console.log(`  ${i+1}. User: ${msg.content.substring(0, 30)}...`);
-        });
-      }
-      
-      console.log("Sending request to Gemini API...");
-      
-      const result = await model.generateContent({
-        contents: [{ 
-          role: "user", 
-          parts: [{ text: fullPrompt }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      });
+      // Create the system prompt
+      const systemPrompt = `You are Brain, a personal AI assistant for ${username}. Always address the user as ${username}. Be helpful, friendly, and concise.
 
+IMPORTANT: If the user asks to open an application or website, respond naturally but the system will handle opening it automatically. You can acknowledge their request like "Opening [app name] for you" or "I'll open that for you".`;
+      
+      // Combine system prompt, history, and current message
+      let fullPrompt = systemPrompt + '\n\n';
+      
+      // Add recent conversation history
+      const recentMessages = previousMessages.slice(0, 5).reverse();
+      if (recentMessages.length > 0) {
+        fullPrompt += 'Previous conversation:\n';
+        for (const msg of recentMessages) {
+          fullPrompt += `${username}: ${msg.content}\nBrain: ${msg.aiResponse}\n\n`;
+        }
+      }
+      
+      // Add current message
+      fullPrompt += `${username}: ${prompt}\nBrain:`;
+      
+      console.log('Sending request to Gemini...');
+      // Update rate limit before making the request
+      this.updateRateLimit();
+      
+      const result = await model.generateContent(fullPrompt);
       const response = result.response;
       const responseText = response.text() || "I'm sorry, I couldn't generate a response.";
       
@@ -100,14 +134,20 @@ When asked follow-up questions, connect them to previous conversation context.`;
       console.log(`Generated response (first 50 chars): "${cleanedResponse.substring(0, 50)}..."`);
       
       return cleanedResponse;
-    } catch (error: any) {
-      console.error("Gemini API error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
+    } catch (error: unknown) {
+      console.error('Error generating AI response:', error);
+      console.error('Full error details:', error);
       
-      // Return a friendly error message instead of throwing
-      return "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.";
+      if (error instanceof Error) {
+        console.error('Error stack:', error.stack);
+        throw new Error(`AI response generation failed: ${error.message}`);
+      } else {
+        console.error('Non-Error object thrown:', typeof error);
+        throw new Error('AI response generation failed: Unknown error');
+      }
     }
   }
 }
 
+// Create and export a singleton instance
 export const aiService = new AIService();
