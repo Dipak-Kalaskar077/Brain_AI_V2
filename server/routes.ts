@@ -10,7 +10,11 @@ import MemoryStore from 'memorystore';
 import { apiLimiter, chatLimiter, validateAuth, validateChat } from './middleware';
 import { detectOpenCommand, openApplication, openWebsite } from './system-commands';
 
+const isDev = process.env.NODE_ENV !== "production";
+
+
 const SessionStore = MemoryStore(session);
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
@@ -38,6 +42,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  
+  
   // Auth endpoint
   app.post("/api/auth", apiLimiter, validateAuth, async (req: Request, res: Response) => {
     try {
@@ -110,8 +116,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
+      if (isDev) {
+        return res.status(200).json([]);
+      }
+      
       const messages = await storage.getMessagesByUserId(userId);
       res.status(200).json(messages);
+      
     } catch (error: any) {
       console.error("Get messages error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -145,6 +156,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      if (isDev) {
+        // DEV MODE: no DB, no persistence
+        const aiResponse = await aiService.generateResponse(
+          validation.data.content,
+          validation.data.username || "DevUser",
+          []
+        );
+      
+        return res.status(200).json({
+          id: Date.now(),
+          userMessage: validation.data.content,
+          aiResponse,
+          timestamp: new Date(),
+          model: "gemini",
+          devMode: true
+        });
+      }
+      
+
       // Extract data including the username
       let { userId } = validation.data;
       const { username: clientUsername, content } = validation.data;
