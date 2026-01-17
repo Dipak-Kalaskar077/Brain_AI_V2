@@ -3,14 +3,25 @@
  * This ensures all required environment variables are present before the app starts
  */
 
+import dotenv from "dotenv";
+
+/**
+ * Load environment variables from .env file
+ * MUST be called before accessing process.env
+ */
+dotenv.config();
+
+/**
+ * Environment variable validation and configuration
+ * This ensures all required environment variables are present before the app starts
+ */
+
+
 // Validate required environment variables
 const requiredEnvVars = {
-  DB_HOST: process.env.DB_HOST,
-  DB_USER: process.env.DB_USER,
-  DB_PASSWORD: process.env.DB_PASSWORD,
-  DB_NAME: process.env.DB_NAME,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 } as const;
+
 
 // Optional but recommended environment variables
 const optionalEnvVars = {
@@ -47,13 +58,12 @@ export function validateEnv() {
   return true;
 }
 
+console.log("ENV SOURCE CHECK → GEMINI_API_KEY:", process.env.GEMINI_API_KEY);
+console.log("ENV CHECK FULL KEY:", process.env.GEMINI_API_KEY);
+
+
 // Export validated environment variables
 export const env = {
-  // Database
-  DB_HOST: requiredEnvVars.DB_HOST!,
-  DB_USER: requiredEnvVars.DB_USER!,
-  DB_PASSWORD: requiredEnvVars.DB_PASSWORD!,
-  DB_NAME: requiredEnvVars.DB_NAME!,
   
   // API Keys
   GEMINI_API_KEY: requiredEnvVars.GEMINI_API_KEY!,

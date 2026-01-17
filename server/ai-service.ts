@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Gemini model - use an available model from the API
 // Updated to use gemini-2.5-flash (fast and efficient)
 const GEMINI_MODEL = "gemini-2.5-flash";
+console.log("Gemini key loaded:", process.env.GEMINI_API_KEY?.slice(0, 6));
 
 interface RateLimitInfo {
   lastRequestTime: number;
