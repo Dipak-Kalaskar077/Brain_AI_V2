@@ -1,25 +1,36 @@
-import { mysqlTable, varchar, int, timestamp } from "drizzle-orm/mysql-core";
+import { pgTable, serial, varchar, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
+/* =========================
+   USERS TABLE
+========================= */
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
 });
 
-export const messages = mysqlTable("messages", {
-  id: int("id").primaryKey().autoincrement(),
-  userId: int("user_id").notNull(),
+/* =========================
+   MESSAGES TABLE
+========================= */
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   content: varchar("content", { length: 1000 }).notNull(),
   aiResponse: varchar("ai_response", { length: 1000 }).notNull(),
   model: varchar("model", { length: 50 }).notNull(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
+/* =========================
+   ZOD SCHEMAS
+========================= */
 export const insertUserSchema = createInsertSchema(users).extend({
   username: z.string().min(2, "Username must be at least 2 characters"),
-  password: z.string().min(4, "Password must be at least 4 characters")
+  password: z.string().min(4, "Password must be at least 4 characters"),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({
@@ -29,6 +40,9 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
   model: true,
 });
 
+/* =========================
+   TYPES
+========================= */
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
